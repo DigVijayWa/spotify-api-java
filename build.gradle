@@ -16,6 +16,17 @@ plugins {
 // Define the main class for the application
 mainClassName = 'App'
 
+task fatJar(type : Jar) {
+    manifest {
+        attributes(
+                'Main-Class': 'App'
+        )
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
 dependencies {
     // This dependency is found on compile classpath of this component and consumers
     compile 'javax.websocket:javax.websocket-api:1.1'

@@ -8,6 +8,7 @@ public class KeyAdapterClass implements KeyListener {
   public void keyReleased(KeyEvent e) {
     System.out.println("key pressed "+e.getKeyChar());
   }
+
   public void keyTyped(KeyEvent e) {
     System.out.println("key pressed "+e.getKeyChar());
   }

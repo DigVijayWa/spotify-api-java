@@ -29,17 +29,47 @@ public class App {
 
   private static String refreshToken = "";
 
-  private static boolean readyForApiCalls = false;
+  private static WebSocketClient cc;
+
+  public static String getAccessToken() {
+    return accessToken;
+  }
+
+  public static void setAccessToken(String accessToken) {
+    App.accessToken = accessToken;
+  }
+
+  public static String getTokenType() {
+    return tokenType;
+  }
+
+  public static void setTokenType(String tokenType) {
+    App.tokenType = tokenType;
+  }
+
+  public static Integer getExpirationTime() {
+    return expirationTime;
+  }
+
+  public static void setExpirationTime(Integer expirationTime) {
+    App.expirationTime = expirationTime;
+  }
+
+  public static String getRefreshToken() {
+    return refreshToken;
+  }
+
+  public static void setRefreshToken(String refreshToken) {
+    App.refreshToken = refreshToken;
+  }
+
+  public static boolean readyForApiCalls = false;
 
   //deployed server
-  private static String serverURL = "https://server-app.cfapps.sap.hana.ondemand.com";
+  private static String serverURL = "https://server-app.cfapps.eu10.hana.ondemand.com";
 
   //in case the deployed server doesnt work
   private static String localServer = "http://localhost:3000";
-
-  public App() {
-
-  }
 
   public static void main(String[] args) throws URISyntaxException {
     //start the websocket with the server;
@@ -52,10 +82,12 @@ public class App {
     }
     callChrome(state);
 
-
-    //call the music player GUI
-
-
+    try {
+      Thread.sleep(5000);
+    } catch (InterruptedException E) {
+      E.printStackTrace();
+    }
+    new GuiApplication(accessToken, tokenType, expirationTime, refreshToken);
   }
 
   private static void makeAuthorization(String state) {
@@ -64,7 +96,7 @@ public class App {
 
     String url = "https://accounts.spotify.com/api/token";
     String urlParameters = "grant_type=authorization_code&code=" + code
-        + "&redirect_uri="+serverURL+"/callback&client_id=" + clientId + "&client_secret="
+        + "&redirect_uri=" + serverURL + "/callback&client_id=" + clientId + "&client_secret="
         + clientSecret + "&state=" + state;
     try {
       System.out.print("\n URL : " + url);
@@ -105,6 +137,7 @@ public class App {
           readyForApiCalls = true;
         } else {
           System.out.println("Something went Wrong : error in URL");
+          closeConnection();
         }
       }
 
@@ -116,7 +149,8 @@ public class App {
   private static void callChrome(String state) {
     String clientId = "a6039cc0a4ea4d6e92b9e7e635282e79";
     String url = "\"https://accounts.spotify.com/authorize?client_id=" + clientId
-        + "&response_type=code&redirect_uri="+serverURL+"/callback&scope=user-read-private%20user-read-email&state="
+        + "&response_type=code&redirect_uri=" + serverURL
+        + "/callback&scope=user-read-private%20user-read-email&state="
         + state + "\"";
     System.out.print("URL : " + url);
     String startScript = "start chrome " + url;
@@ -134,10 +168,10 @@ public class App {
 
   private static void webSocketConnection(String state) {
     try {
-      String socketUrl = "wss://server-app.cfapps.sap.hana.ondemand.com?state=";
+      String socketUrl = "wss://server-app.cfapps.eu10.hana.ondemand.com?state=";
       String webSocketURL = socketUrl + state;
-      System.out.print("trying to connect : "+webSocketURL+"\n");
-      WebSocketClient cc = new WebSocketClient(new URI(webSocketURL)) {
+      System.out.print("trying to connect : " + webSocketURL + "\n");
+      cc = new WebSocketClient(new URI(webSocketURL)) {
         @Override
         public void onMessage(String message) {
           JSONObject jsonObject = new JSONObject(message);
@@ -157,7 +191,7 @@ public class App {
 
         @Override
         public void onClose(int code, String reason, boolean remote) {
-          System.out.print("\n Code : " + code + "\n Reason : " + reason+ "remote : "+remote);
+          System.out.print("\n Code : " + code + "\n Reason : " + reason + "remote : " + remote);
           System.out.println("Connection Closed");
         }
 
@@ -169,9 +203,13 @@ public class App {
 
       cc.connect();
       //cc.send("HI");
-    }catch(Exception e) {
+    } catch (Exception e) {
       e.printStackTrace();
     }
+  }
+
+  private static void closeConnection() {
+    cc.close();
   }
 
   public static boolean accessTokenIsExpired() {
